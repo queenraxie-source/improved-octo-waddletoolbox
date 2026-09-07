@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { parseHlsMaster } from '../lib/playlist-parser.js';
 import { calculateEta, formatEta } from '../lib/eta.js';
-import { formatFilename } from '../lib/filename.js';
+import { formatFilename, inferExtension } from '../lib/filename.js';
+assert(inferExtension({ src: 'https://example.test/movie.webm' }) === 'webm', 'filename infers webm extension');
 
 const playlist = '#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=800000,RESOLUTION=640x360\nlow.m3u8\n#EXT-X-STREAM-INF:BANDWIDTH=2400000,RESOLUTION=1920x1080\nhigh.m3u8';
 const variants = parseHlsMaster(playlist, 'https://media.test/master.m3u8');

@@ -5,10 +5,17 @@ const detectedIcon = { 16: 'icons/icon-detected.svg', 32: 'icons/icon-detected.s
 const defaultIcon = { 16: 'icons/icon.svg', 32: 'icons/icon.svg', 48: 'icons/icon.svg', 128: 'icons/icon.svg' };
 
 chrome.runtime.onInstalled.addListener(() => {
-  chrome.contextMenus.create({ id: 'download-video', title: 'Download with Video Pro Finder', contexts: ['video', 'link'] });
+  chrome.contextMenus.removeAll().then(() => chrome.contextMenus.create({ id: 'download-video', title: 'Download with Video Pro Finder', contexts: ['video', 'link'] }));
 });
-chrome.contextMenus.onClicked.addListener((info, tab) => {
-  if (tab?.id && (info.srcUrl || info.linkUrl)) chrome.tabs.sendMessage(tab.id, { type: 'CONTEXT_DOWNLOAD', url: info.srcUrl || info.linkUrl });
+chrome.contextMenus.onClicked.addListener(async (info, tab) => {
+  if (!tab?.id || !(info.srcUrl || info.linkUrl)) return;
+  const message = { type: 'CONTEXT_DOWNLOAD', url: info.srcUrl || info.linkUrl };
+  try {
+    await chrome.tabs.sendMessage(tab.id, message);
+  } catch {
+    await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['content.js'] }).catch(() => {});
+    await chrome.tabs.sendMessage(tab.id, message).catch(() => {});
+  }
 });
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'SOURCES_DETECTED') {
@@ -22,6 +29,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 async function startDownload(message, tab) {
   const source = message.source;
+  if (!source?.src || source.src.startsWith('blob:')) return { ok: false, error: 'This player uses a blob URL. The original media request is protected or unavailable to the browser download API.' };
+  if (source.isDRM) return { ok: false, error: 'This media appears to use DRM and cannot be downloaded by a standard browser extension.' };
   const filename = sanitizeFilename(message.filename || 'video.mp4');
   const id = crypto.randomUUID();
   state.set(id, { id, status: 'starting', received: 0, total: 0, filename, source, title: message.title, startedAt: Date.now() });
