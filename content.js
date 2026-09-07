@@ -20,7 +20,7 @@
       mime: metadata.mime || previous.mime || '', originHost: location.host, estimatedSize: metadata.estimatedSize || previous.estimatedSize || null,
       isDRM: Boolean(metadata.isDRM || previous.isDRM || /encrypted|drm|widevine|playready|fairplay/i.test(src)),
       title: document.title || 'Untitled video', poster: metadata.poster || previous.poster || '', codecs: metadata.codecs || previous.codecs || '',
-      subtitles: metadata.subtitles || previous.subtitles || [], downloadable: !isBlob && !playlistPattern.test(src)
+      subtitles: metadata.subtitles || previous.subtitles || [], downloadable: !isBlob
     });
   };
   function scanVideoElements() {

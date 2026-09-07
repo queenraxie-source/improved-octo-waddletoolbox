@@ -23,7 +23,10 @@ async function init() {
   els.prompt.onchange = () => chrome.storage.local.set({ prompt: els.prompt.value });
   document.querySelectorAll('[data-fragment]').forEach(button => button.onclick = () => { const fragment = button.dataset.fragment; if (!els.prompt.value.toLowerCase().includes(fragment.toLowerCase())) els.prompt.value += `; ${fragment}`; els.prompt.dispatchEvent(new Event('change')); });
   const response = await requestSources();
-  if (response) applySources(response); else els.status.textContent = 'Cannot scan this page';
+  if (response) {
+    const network = await chrome.runtime.sendMessage({ type: 'GET_NETWORK_SOURCES', tabId: tab.id }).catch(() => []);
+    applySources({ ...response, sources: [...(response.sources || []), ...network.filter(item => !(response.sources || []).some(source => source.src === item.src))] });
+  } else els.status.textContent = 'Cannot scan this page';
 }
 async function requestSources() {
   for (let attempt = 0; attempt < 3; attempt += 1) {

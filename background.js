@@ -1,10 +1,10 @@
 import { sanitizeFilename } from './lib/filename.js';
-import { isEncryptedHls, parseHlsMaster, resolveUrl } from './lib/playlist-parser.js';
 
 const state = new Map();
 const detectedIcon = { 16: 'icons/ultimate-krypton-icon.svg', 32: 'icons/ultimate-krypton-icon.svg', 48: 'icons/ultimate-krypton-icon.svg', 128: 'icons/ultimate-krypton-icon.svg' };
 const defaultIcon = { 16: 'icons/ultimate-krypton-icon.svg', 32: 'icons/ultimate-krypton-icon.svg', 48: 'icons/ultimate-krypton-icon.svg', 128: 'icons/ultimate-krypton-icon.svg' };
 const STATE_KEY = 'downloadState';
+const networkSources = new Map();
 
 restoreState();
 
@@ -29,6 +29,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'START_DOWNLOAD') startDownload(message, sender.tab).then(sendResponse);
   if (message.type === 'GET_DOWNLOAD_STATE') sendResponse(state.get(message.id) || null);
   if (message.type === 'GET_DOWNLOAD_STATES') sendResponse([...state.values()]);
+  if (message.type === 'GET_NETWORK_SOURCES') sendResponse(networkSources.get(message.tabId || sender.tab?.id) || []);
+  if (message.type === 'OFFSCREEN_PROGRESS') {
+    if (message.id && state.has(message.id)) setState(message.id, { ...state.get(message.id), status: 'assembling', received: message.received, total: message.total });
+  }
   return true;
 });
 
@@ -55,42 +59,25 @@ async function fallbackPlaylist(id, source, filename) {
 }
 async function downloadAccessibleHls(id, source, filename) {
   try {
-    const playlistResponse = await fetchWithRetry(source.src);
-    if (!playlistResponse.ok) throw new Error(`Playlist request returned ${playlistResponse.status}`);
-    const playlistText = await playlistResponse.text();
-    if (/#EXT-X-STREAM-INF:/i.test(playlistText)) {
-      const variants = parseHlsMaster(playlistText, source.src);
-      if (!variants.length) throw new Error('No HLS variants were found.');
-      return { ok: false, id, playlist: variants[0].src, error: 'This is an HLS master playlist. Select a quality variant and try again.' };
+    await ensureOffscreenDocument();
+    const result = await chrome.runtime.sendMessage({ type: 'MERGE_HLS', id, source, filename: sanitizeFilename(filename) });
+    if (!result?.ok) {
+      setState(id, { ...state.get(id), status: 'playlist-fallback', error: result?.error || 'The HLS stream could not be assembled.' });
+      return { ok: false, id, playlist: result?.playlist || source.src, error: result?.error || 'The HLS stream could not be assembled.' };
     }
-    if (isEncryptedHls(playlistText)) {
-      return { ok: false, id, error: 'This HLS playlist is encrypted. The extension will not decrypt or bypass protected media.' };
-    }
-    const lines = playlistText.split(/\r?\n/).map(line => line.trim());
-    const segmentUrls = lines.filter(line => line && !line.startsWith('#')).map(line => resolveUrl(line, source.src));
-    if (!segmentUrls.length) throw new Error('The HLS media playlist has no segments.');
-    if (segmentUrls.length > 2000) throw new Error('This playlist has too many segments for an in-browser merge. Use an authorized media tool instead.');
-    const chunks = [];
-    let received = 0;
-    for (const segmentUrl of segmentUrls) {
-      const response = await fetchWithRetry(segmentUrl);
-      if (!response.ok) throw new Error(`Segment request returned ${response.status}`);
-      const chunk = await response.arrayBuffer();
-      received += chunk.byteLength;
-      if (received > 512 * 1024 * 1024) throw new Error('The playlist is larger than the browser merge limit.');
-      chunks.push(chunk);
-      setState(id, { ...state.get(id), status: 'assembling', received, total: 0 });
-    }
-    const blob = new Blob(chunks, { type: 'video/mp2t' });
-    const blobUrl = URL.createObjectURL(blob);
-    const downloadId = await chrome.downloads.download({ url: blobUrl, filename: sanitizeFilename(filename.replace(/\.[^.]+$/, '.ts')), conflictAction: 'uniquify', saveAs: false });
-    setState(id, { ...state.get(id), downloadId, status: 'downloading', received, total: received });
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
-    return { ok: true, id, downloadId };
+    setState(id, { ...state.get(id), downloadId: result.downloadId, status: 'downloading', received: result.received, total: result.total });
+    return { ok: true, id, downloadId: result.downloadId };
   } catch (error) {
     const messageText = friendlyError(error);
     setState(id, { ...state.get(id), status: 'playlist-fallback', error: messageText });
     return { ok: false, id, playlist: source.src, error: `${messageText} You can open the playlist or use an authorized HLS tool.` };
+  }
+}
+async function ensureOffscreenDocument() {
+  try {
+    await chrome.offscreen.createDocument({ url: 'offscreen.html', reasons: ['BLOBS'], justification: 'Assemble permitted unencrypted HLS segments for download.' });
+  } catch (error) {
+    if (!/already exists|Only (one|a single) offscreen document/i.test(String(error?.message || error))) throw error;
   }
 }
 async function fetchWithRetry(url, attempts = 3) {
@@ -115,6 +102,8 @@ function setState(id, value) {
 async function restoreState() {
   const stored = await chrome.storage.local.get(STATE_KEY).catch(() => ({}));
   for (const [id, item] of Object.entries(stored[STATE_KEY] || {})) state.set(id, { ...item, status: item.status === 'downloading' ? 'resuming' : item.status });
+  const session = await chrome.storage.session?.get(null).catch(() => ({}));
+  for (const [key, items] of Object.entries(session || {})) if (key.startsWith('network_')) networkSources.set(Number(key.slice(8)), items);
   for (const item of state.values()) {
     if (!item.downloadId) continue;
     chrome.downloads.search({ id: item.downloadId }).then(results => {
@@ -138,6 +127,19 @@ chrome.downloads.onChanged.addListener(delta => {
     chrome.runtime.sendMessage({ type: 'DOWNLOAD_PROGRESS', ...next }).catch(() => {});
   }
 });
+
+chrome.webRequest.onResponseStarted.addListener(details => {
+  const headers = Object.fromEntries((details.responseHeaders || []).map(header => [header.name.toLowerCase(), header.value || '']));
+  const mime = headers['content-type']?.split(';')[0].toLowerCase() || '';
+  const isMedia = /^video\//.test(mime) || /mpegurl|dash\+xml/.test(mime) || /\.(mp4|webm|mov|m4v|mkv|m3u8|mpd|m4s|ts)(?:[?#]|$)/i.test(details.url);
+  if (!isMedia || !details.tabId || details.tabId < 0) return;
+  const source = { src: details.url, label: 'Network media', mime, originHost: new URL(details.url).host, estimatedSize: Number(headers['content-length']) || null, isDRM: /drm|encrypted|widevine|playready|fairplay/i.test(details.url), downloadable: true };
+  const items = networkSources.get(details.tabId) || [];
+  if (!items.some(item => item.src === source.src)) items.push(source);
+  networkSources.set(details.tabId, items.slice(-100));
+  chrome.storage.session?.set({ [`network_${details.tabId}`]: networkSources.get(details.tabId) });
+  chrome.action.setIcon({ tabId: details.tabId, path: detectedIcon }).catch(() => {});
+}, { urls: ['<all_urls>'], types: ['main_frame', 'sub_frame', 'xmlhttprequest', 'media', 'other'] }, ['responseHeaders', 'extraHeaders']);
 async function retryDownload(item) {
   const retryCount = (item.retries || 0) + 1;
   setState(item.id, { ...item, status: 'retrying', retries: retryCount, error: `Network interruption. Retrying (${retryCount}/3)…` });

@@ -15,12 +15,14 @@ The default content script is limited to pages where the browser permits the ext
 ## Features
 
 - Detects video elements, source and track children, video links, and URL-shaped values in inline scripts.
+- Optional network scanning observes response content types, so media with extensionless or signed URLs can still be listed. Enable it in Advanced options; host access is requested only for that feature.
 - Deduplicates sources and records MIME type, host, resolution, bitrate, codecs, poster, subtitles, and a best-effort DRM flag.
 - Parses HLS master playlists and DASH manifests with relative URL resolution and highest-quality-first ordering.
 - Previews direct MP4/WebM sources and attempts native HLS playback.
 - Stores the prompt and per-domain quality choices in `chrome.storage.local`.
 - Uses `chrome.downloads` for direct URLs and gives an actionable CORS/authentication or HLS `ffmpeg` fallback when the browser cannot fetch or merge media.
 - Attempts to merge accessible, unencrypted HLS segments into a `.ts` download with browser-side size and segment limits; encrypted playlists, DRM, CORS blocks, and authenticated failures are refused rather than bypassed.
+- Uses an offscreen document for HLS blob assembly because service workers cannot create object URLs reliably. The offscreen document is created only when an HLS download is requested.
 - Includes a gold progress treatment, ETA calculation, download history, context-menu action, and draggable prompt bubbles.
 
 ## Default prompt
