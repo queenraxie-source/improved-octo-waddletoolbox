@@ -1,0 +1,11 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Video Pro Finder</title><link rel="stylesheet" href="styles.css"></head>
+<body><main class="app">
+<header class="topbar"><div class="brand"><img src="icons/icon.svg" alt=""><span>Video Pro Finder</span></div><button id="rescan" class="icon-button" title="Rescan current page" aria-label="Rescan current page">↻</button></header>
+<section class="hero"><div><p class="eyebrow">CURRENT PAGE</p><h1 id="page-title">Looking for playable sources</h1><p id="page-origin" class="muted">Open a page with video, then rescan.</p></div><label class="toggle"><input id="quick-download" type="checkbox"><span></span> Quick Download</label></section>
+<section class="preview-panel"><div class="preview-head"><span class="eyebrow">PREVIEW</span><span id="preview-meta" class="muted">No source selected</span></div><video id="preview" controls playsinline aria-label="Video preview"></video><div id="preview-note" class="notice">Select a source to preview it.</div></section>
+<section class="prompt-section"><div class="section-title"><h2>Save prompt</h2><button id="options" class="text-button">Advanced options</button></div><input id="prompt" class="prompt-input" aria-label="Filename and download prompt"><div id="bubbles" class="bubble-grid" aria-label="Prompt presets"><button data-fragment="prefer 1080p>720p>480p">1080p first</button><button data-fragment="non-DRM only">Non-DRM</button><button data-fragment="include subtitles">Subtitles</button><button data-fragment="auto-save to Downloads">Auto-save</button></div></section>
+<section><div class="section-title"><h2>Detected sources <span id="count" class="count">0</span></h2><span id="status" class="muted" role="status"></span></div><button id="quick-action" class="primary quick-action" hidden>Quick Download</button><div id="sources" class="source-list"></div></section>
+<section><div class="section-title"><h2>Recent downloads</h2></div><div id="history" class="history-list"><p class="muted">No downloads yet.</p></div></section>
+<footer class="maker"><img src="icons/ultimate-krypton.svg" alt="Ultimate Krypton Inc."><span>Made by Ultimate Krypton Inc.</span></footer></main><script type="module" src="popup.js"></script></body></html>
