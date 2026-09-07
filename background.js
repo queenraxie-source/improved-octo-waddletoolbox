@@ -1,8 +1,8 @@
 import { sanitizeFilename } from './lib/filename.js';
 
 const state = new Map();
-const detectedIcon = { 16: 'icons/icon-detected.svg', 32: 'icons/icon-detected.svg', 48: 'icons/icon-detected.svg', 128: 'icons/icon-detected.svg' };
-const defaultIcon = { 16: 'icons/icon.svg', 32: 'icons/icon.svg', 48: 'icons/icon.svg', 128: 'icons/icon.svg' };
+const detectedIcon = { 16: 'icons/ultimate-krypton-icon.svg', 32: 'icons/ultimate-krypton-icon.svg', 48: 'icons/ultimate-krypton-icon.svg', 128: 'icons/ultimate-krypton-icon.svg' };
+const defaultIcon = { 16: 'icons/ultimate-krypton-icon.svg', 32: 'icons/ultimate-krypton-icon.svg', 48: 'icons/ultimate-krypton-icon.svg', 128: 'icons/ultimate-krypton-icon.svg' };
 
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.removeAll().then(() => chrome.contextMenus.create({ id: 'download-video', title: 'Download with Video Pro Finder', contexts: ['video', 'link'] }));
