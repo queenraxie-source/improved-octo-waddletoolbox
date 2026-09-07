@@ -20,6 +20,7 @@ The default content script is limited to pages where the browser permits the ext
 - Previews direct MP4/WebM sources and attempts native HLS playback.
 - Stores the prompt and per-domain quality choices in `chrome.storage.local`.
 - Uses `chrome.downloads` for direct URLs and gives an actionable CORS/authentication or HLS `ffmpeg` fallback when the browser cannot fetch or merge media.
+- Attempts to merge accessible, unencrypted HLS segments into a `.ts` download with browser-side size and segment limits; encrypted playlists, DRM, CORS blocks, and authenticated failures are refused rather than bypassed.
 - Includes a gold progress treatment, ETA calculation, download history, context-menu action, and draggable prompt bubbles.
 
 ## Default prompt
