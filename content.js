@@ -54,8 +54,10 @@
   }
   function scheduleScan() { clearTimeout(scanTimer); scanTimer = setTimeout(scan, 250); }
   scan();
-  new MutationObserver(scheduleScan).observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['src', 'href', 'data-src', 'data-video'] });
-  new PerformanceObserver(scheduleScan).observe({ type: 'resource', buffered: true });
+  if (document.documentElement && globalThis.MutationObserver) new MutationObserver(scheduleScan).observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['src', 'href', 'data-src', 'data-video'] });
+  if (globalThis.PerformanceObserver) {
+    try { new PerformanceObserver(scheduleScan).observe({ type: 'resource', buffered: true }); } catch { /* Older pages may not support resource observers. */ }
+  }
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     if (message.type === 'RESCAN') { sendResponse(scan()); return true; }
     if (message.type === 'CONTEXT_DOWNLOAD' && message.url) {

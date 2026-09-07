@@ -23,7 +23,10 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
 });
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'SOURCES_DETECTED') {
-    if (sender.tab?.id) chrome.action.setIcon({ tabId: sender.tab.id, path: message.sources?.length ? detectedIcon : defaultIcon });
+    if (sender.tab?.id) {
+      chrome.action.setIcon({ tabId: sender.tab.id, path: message.sources?.length ? detectedIcon : defaultIcon });
+      chrome.runtime.sendMessage({ ...message, type: 'SOURCES_DETECTED', tabId: sender.tab.id }).catch(() => {});
+    }
     chrome.storage.session?.set({ [`tab_${sender.tab?.id}`]: message });
   }
   if (message.type === 'START_DOWNLOAD') startDownload(message, sender.tab).then(sendResponse);

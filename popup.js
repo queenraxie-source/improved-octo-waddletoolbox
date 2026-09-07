@@ -12,10 +12,21 @@ async function init() {
   await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['content.js'] }).catch(() => {});
   const stored = await chrome.storage.local.get(['prompt', 'quickDownload', 'history']);
   els.prompt.value = stored.prompt || DEFAULT_PROMPT; $('#quick-download').checked = Boolean(stored.quickDownload); renderHistory(stored.history || []);
-  chrome.runtime.onMessage.addListener(message => { if (message.type === 'DOWNLOAD_PROGRESS') updateProgress(message); });
+  chrome.runtime.onMessage.addListener(message => {
+    if (message.type === 'DOWNLOAD_PROGRESS') updateProgress(message);
+    if (message.type === 'SOURCES_DETECTED' && message.tabId === tab.id) applySources(message);
+  });
   const restoredDownloads = await chrome.runtime.sendMessage({ type: 'GET_DOWNLOAD_STATES' }).catch(() => []);
   restoredDownloads.filter(item => ['starting', 'downloading', 'assembling', 'resuming', 'retrying', 'interrupted'].includes(item.status)).forEach(updateProgress);
-  $('#rescan').onclick = () => chrome.tabs.sendMessage(tab.id, { type: 'RESCAN' });
+  $('#rescan').onclick = async () => {
+    els.status.textContent = 'Scanning…';
+    const response = await chrome.tabs.sendMessage(tab.id, { type: 'RESCAN' }).catch(() => null);
+    if (response) {
+      const network = await chrome.runtime.sendMessage({ type: 'GET_NETWORK_SOURCES', tabId: tab.id }).catch(() => []);
+      applySources({ ...response, sources: [...(response.sources || []), ...network.filter(item => !(response.sources || []).some(source => source.src === item.src))] });
+      els.status.textContent = sources.length ? `${sources.length} found` : 'No media found';
+    } else els.status.textContent = 'This page cannot be scanned. Try a normal http/https page.';
+  };
   $('#options').onclick = () => chrome.runtime.openOptionsPage();
   $('#quick-download').onchange = event => chrome.storage.local.set({ quickDownload: event.target.checked });
   $('#quick-action').onclick = () => selected && download(selected);
