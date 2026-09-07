@@ -8,7 +8,7 @@ Video Pro Finder is a Manifest V3 Chrome/Edge extension made by **Ultimate Krypt
 2. Enable **Developer mode**.
 3. Choose **Load unpacked** and select this repository folder.
 4. Open a page containing a video, select the extension, and use **Rescan** if the page loaded media after the initial scan.
-5. For a local smoke test, serve this folder from a local HTTP server and open `demo/test.html`. For example: `python3 -m http.server 8000`, then visit `http://localhost:8000/demo/test.html`.
+5. For a local smoke test, serve this folder from a local HTTP server and open `demo/test.html`. For example: `python3 -m http.server 8000`, then visit `http://localhost:8000/demo/test.html`. The repository includes a 21 MB local MP4 fixture so direct-file detection works offline.
 
 The default content script is limited to pages where the browser permits the extension to run. Advanced host scanning is opt-in from the options page and requests `<all_urls>` using the optional permission.
 
@@ -44,6 +44,7 @@ The pure helper modules have no package dependencies. Run:
 node tests/test-harness.js
 for file in background.js content.js popup.js options.js lib/*.js tests/test-harness.js; do node --check "$file"; done
 python3 -m json.tool manifest.json >/dev/null
+sh scripts/package.sh
 ```
 
 The harness covers HLS/DASH ordering, relative URLs, ETA smoothing, and filename templating. Browser testing should be done with the unpacked extension and `demo/test.html`; a real HLS endpoint is required to see variant expansion because the sample URL is intentionally non-hosting test data.
@@ -52,7 +53,7 @@ The harness covers HLS/DASH ordering, relative URLs, ETA smoothing, and filename
 
 - DRM, encrypted media extensions, blob-only sources, and protected player pipelines cannot be downloaded by this extension. A DRM suspicion is informational only.
 - Playlist and authenticated media requests remain subject to CORS, cookies, referrer checks, server permissions, and browser policy. The popup reports a fallback rather than bypassing those controls.
-- HLS segment merging is not performed by default in the service worker. Use the displayed permitted URL with `ffmpeg -i "PLAYLIST_URL" -c copy "output.mp4"`, subject to the site's terms and your rights.
+- HLS segment merging is performed in an offscreen document only for accessible, unencrypted playlists. If browser policy blocks it, use the displayed permitted URL with `ffmpeg -i "PLAYLIST_URL" -c copy "output.mp4"`, subject to the site's terms and your rights.
 - DASH representations can be listed, but browser downloads may require the original manifest/player because representations can depend on initialization and segment templates.
 - Subtitle tracks are detected and shown as metadata. The extension does not burn subtitles into video; download the `.vtt` sidecar separately when permitted.
 - The extension has no analytics and does not transmit page content or URLs to an external service.
@@ -62,10 +63,12 @@ The harness covers HLS/DASH ordering, relative URLs, ETA smoothing, and filename
 1. Test the unpacked extension in current Chrome and Edge, including a clean profile.
 2. Verify the included Ultimate Krypton Inc. artwork in `icons/ultimate-krypton.svg` and the toolbar icons before publishing.
 3. Review host permissions and keep advanced scanning optional.
-4. Increment `version` in `manifest.json`, zip the extension contents without development files, and validate the zip by loading it in a clean browser profile.
+4. Increment `version` in `manifest.json`, run `sh scripts/package.sh`, and validate the generated ZIP by loading it in a clean browser profile. The script checks that the package includes the requested 10 MiB of useful demo/runtime content.
 5. Prepare store screenshots, privacy disclosures, support URL, and a description of the download permissions.
 6. Submit through the Chrome Web Store and Microsoft Edge Add-ons portals and respond to permission/privacy review questions.
 
 ## Legal and ethics
 
 Use Video Pro Finder only for media you own or are authorized to save. Do not use it to bypass DRM or download copyrighted content without permission. Respect site terms, access controls, copyright, privacy, and applicable law.
+
+The bundled `demo/fixtures/sample-30s.mp4` is a test-only sample obtained from Samplelib. Review its redistribution terms before publishing a store package; remove it from a production distribution if your licensing review requires that.

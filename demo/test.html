@@ -12,12 +12,13 @@
 <body>
   <p><strong>Ultimate Krypton Inc.</strong></p>
   <h1>Video Pro Finder demo</h1>
-  <p>This page exercises direct video, source, anchor, subtitle, and playlist detection.</p>
+  <p>This page exercises direct video, source, anchor, subtitle, playlist, and offline local-file detection.</p>
+  <p><a href="fixtures/sample-30s.mp4">Open the bundled 21 MB MP4 fixture</a></p>
   <video controls poster="https://interactive-examples.mdn.mozilla.net/media/cc0-images/flower.jpg">
     <source src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4" type="video/mp4">
     <track kind="subtitles" srclang="en" label="English" src="sample.vtt">
   </video>
-  <video controls src="https://storage.googleapis.com/coverr-main/mp4/Mt_Baker.mp4"></video>
+  <video controls src="fixtures/sample-30s.mp4"></video>
   <p><a href="https://example.test/video/master.m3u8">Sample HLS master playlist link</a></p>
   <script>
     // URL-shaped test data; the extension treats script content as untrusted text.
