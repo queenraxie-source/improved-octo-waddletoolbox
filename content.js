@@ -23,6 +23,22 @@
       subtitles: metadata.subtitles || previous.subtitles || [], downloadable: !isBlob
     });
   };
+  function injectHook() {
+    if (document.querySelector('script[data-vpf-hook]')) return;
+    const hook = document.createElement('script');
+    hook.dataset.vpfHook = 'true';
+    hook.src = chrome.runtime.getURL('page-hook.js');
+    hook.onload = () => hook.remove();
+    const hookTarget = document.documentElement || document.head;
+    if (hookTarget) hookTarget.appendChild(hook);
+  }
+  injectHook();
+  if (!document.documentElement) document.addEventListener('DOMContentLoaded', injectHook, { once: true });
+  window.addEventListener('message', event => {
+    if (event.source !== window || event.data?.source !== 'video-pro-finder' || event.data.type !== 'MEDIA') return;
+    add(event.data.url, { isMedia: true, mime: event.data.mime, label: 'Page network media' });
+    chrome.runtime.sendMessage({ type: 'SOURCES_DETECTED', sources: [...sources.values()], title: document.title, pageUrl: location.href });
+  });
   function scanVideoElements() {
     document.querySelectorAll('video, audio').forEach(media => {
       const subtitles = [...media.querySelectorAll('track')].map(track => ({ src: track.src, label: track.label || track.srclang || 'Subtitles' })).filter(track => track.src);

@@ -8,6 +8,9 @@ const playlist = '#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=800000,RESOLUTION=640x360
 const variants = parseHlsMaster(playlist, 'https://media.test/master.m3u8');
 assert.equal(variants[0].label, '1080p');
 assert.equal(variants[0].src, 'https://media.test/high.m3u8');
+assert.equal(variants[0].audioPlaylistUrl, null);
+const audioMaster = '#EXTM3U\n#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="audio",NAME="English",URI="audio/en.m3u8"\n#EXT-X-STREAM-INF:BANDWIDTH=2400000,RESOLUTION=1920x1080,AUDIO="audio"\nvideo/1080.m3u8';
+assert.equal(parseHlsMaster(audioMaster, 'https://media.test/master.m3u8')[0].audioPlaylistUrl, 'https://media.test/audio/en.m3u8');
 assert.equal(isEncryptedHls('#EXT-X-KEY:METHOD=AES-128,URI="key"'), true);
 assert.equal(isEncryptedHls('#EXT-X-KEY:METHOD=NONE'), false);
 assert.equal(calculateEta(500, 1000, 1000), 1);

@@ -1,1 +1,43 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Video Pro Finder options</title><link rel="stylesheet" href="styles.css"></head><body><main class="app options"><header class="topbar"><div class="brand"><img class="company-mark" src="icons/ultimate-krypton.svg" alt="Ultimate Krypton Inc."><span>Finder options</span></div></header><section><div class="section-title"><h1>Advanced options</h1></div><label class="toggle"><input id="advanced-scan" type="checkbox"><span></span> Request advanced host scanning</label><label class="toggle"><input id="network-scan" type="checkbox"><span></span> Detect network media requests</label><p class="muted option-copy">Network detection needs host access so the extension can see response content types. It stays local and never sends URLs externally.</p><p class="muted option-copy">Only enable this when a site needs broader permissions. Video Pro Finder never sends page data to an external service.</p><h2>Prompt bubbles</h2><p class="muted option-copy">Drag to reorder. Enter adds keyboard-accessible preset bubbles.</p><div id="option-bubbles" class="bubble-grid"></div><input id="new-bubble" class="prompt-input" placeholder="New preset"><button id="add-bubble" class="primary">Add preset</button><p id="saved" class="muted" role="status"></p></section><footer class="maker"><img src="icons/ultimate-krypton.svg" alt="Ultimate Krypton Inc."><span>Made by Ultimate Krypton Inc.</span></footer></main><script type="module" src="options.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Video Pro Finder options</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="app options">
+    <header class="topbar">
+      <div class="brand"><img class="company-mark" src="icons/ultimate-krypton.svg" alt="Ultimate Krypton Inc."><span>Finder options</span></div>
+    </header>
+    <section>
+      <div class="section-title"><h1>Advanced options</h1></div>
+      <label class="toggle"><input id="advanced-scan" type="checkbox"><span></span> Request advanced host scanning</label>
+      <label class="toggle"><input id="network-scan" type="checkbox"><span></span> Detect network media requests</label>
+      <p class="muted option-copy">Network detection requests host access so extensionless and signed media responses can be listed. URLs stay local.</p>
+      <div class="filter-panel">
+        <h2>Media filters</h2>
+        <label>Minimum size (KB)<input id="min-size" class="prompt-input" type="number" min="0" value="300"></label>
+        <fieldset><legend>Formats</legend>
+          <label><input data-format="HLS" type="checkbox" checked> HLS</label>
+          <label><input data-format="DASH" type="checkbox" checked> DASH</label>
+          <label><input data-format="MP4" type="checkbox" checked> MP4</label>
+          <label><input data-format="WebM" type="checkbox" checked> WebM</label>
+          <label><input data-format="audio" type="checkbox" checked> Audio</label>
+        </fieldset>
+        <label>Blocked hosts<textarea id="blocklist" class="prompt-input" rows="3" placeholder="one-host.example"></textarea></label>
+        <button id="save-filters" class="primary">Save filters</button>
+      </div>
+      <h2>Prompt bubbles</h2>
+      <p class="muted option-copy">Drag to reorder. Enter adds keyboard-accessible preset bubbles.</p>
+      <div id="option-bubbles" class="bubble-grid"></div>
+      <input id="new-bubble" class="prompt-input" placeholder="New preset">
+      <button id="add-bubble" class="primary">Add preset</button>
+      <p id="saved" class="muted" role="status"></p>
+    </section>
+    <footer class="maker"><img src="icons/ultimate-krypton.svg" alt="Ultimate Krypton Inc."></footer>
+  </main>
+  <script type="module" src="options.js"></script>
+</body>
+</html>
