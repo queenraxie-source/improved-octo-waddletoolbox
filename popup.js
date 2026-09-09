@@ -35,6 +35,7 @@ async function init() {
     } else els.status.textContent = 'This page cannot be scanned. Try a normal http/https page.';
   };
   $('#options').onclick = () => chrome.runtime.openOptionsPage();
+  $('#toolbox').onclick = () => chrome.tabs.create({ url: chrome.runtime.getURL('tools/index.html') });
   $('#quick-download').onchange = event => chrome.storage.local.set({ quickDownload: event.target.checked });
   $('#quick-action').onclick = () => selected && download(selected);
   $('#save-later').onclick = () => selected && saveWatchLater(selected).then(() => { els.status.textContent = 'Saved for later'; });

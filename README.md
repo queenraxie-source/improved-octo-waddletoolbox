@@ -24,6 +24,7 @@ The default content script is limited to pages where the browser permits the ext
 - Attempts to merge accessible, unencrypted HLS segments into a `.ts` download with browser-side size and segment limits; encrypted playlists, DRM, CORS blocks, and authenticated failures are refused rather than bypassed.
 - Uses an offscreen document for HLS blob assembly because service workers cannot create object URLs reliably. The offscreen document is created only when an HLS download is requested.
 - Includes a gold progress treatment, ETA calculation, download history, context-menu action, and draggable prompt bubbles.
+- Includes a local Toolbox hub with a converter for TS/MP4/MKV/WebM/MOV. The converter tries lossless remux first and falls back to re-encoding when the target container cannot accept the source codecs; files stay in the browser.
 
 ## Default prompt
 
@@ -48,6 +49,10 @@ sh scripts/package.sh
 ```
 
 The harness covers HLS/DASH ordering, relative URLs, ETA smoothing, and filename templating. Browser testing should be done with the unpacked extension and `demo/test.html`; a real HLS endpoint is required to see variant expansion because the sample URL is intentionally non-hosting test data.
+
+## Toolbox converter
+
+Open the popup footer's **Toolbox** button, choose **Convert media**, then drop the `.ts` file produced by an accessible HLS merge or choose the last successful download. Select MP4, MKV, MOV, or WebM and click **Convert locally**. The vendored FFmpeg WASM engine runs on the converter page, never in the service worker and never through a CDN. MP4 is the default output; the converter reports whether it used remux or re-encode.
 
 ## Known limitations
 
